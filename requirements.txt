@@ -1,0 +1,5 @@
+Flask
+torch
+torchvision
+Pillow
+# Add other libraries later as needed (e.g., matplotlib, pandas)
