@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Browse Breeds - Bovine Breed AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "primary": "#C17A3A",
+        "primary-light": "#E8A55A",
+        "bg-dark": "#0F0A06",
+        "card-dark": "#1A1108",
+        "card-border": "#2D1F0E",
+        "cream": "#F0E8D8",
+        "cream-muted": "#9B8B78",
+      },
+      fontFamily: {
+        "display": ["Space Grotesk", "sans-serif"],
+        "serif": ["Playfair Display", "serif"],
+        "sans": ["DM Sans", "sans-serif"],
+      },
+    },
+  },
+}
+</script>
+<style>
+  .top-accent { height: 3px; background: linear-gradient(90deg, #C17A3A, #E8A55A, #C17A3A); background-size: 200% 100%; animation: shimmer 3s linear infinite; }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  nav a { position: relative; }
+  nav a::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #C17A3A; transition: width 0.3s ease; }
+  nav a:hover::after { width: 100%; }
+
+  /* Breed cards */
+  .breed-card { transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; }
+  .breed-card:hover { transform: translateY(-6px); box-shadow: 0 16px 48px rgba(193,122,58,0.2); border-color: rgba(193,122,58,0.4) !important; }
+  .breed-card img { transition: transform 0.5s cubic-bezier(0.4,0,0.2,1); }
+  .breed-card:hover img { transform: scale(1.08); }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0F0A06; }
+  ::-webkit-scrollbar-thumb { background: #C17A3A; border-radius: 10px; }
+
+  /* Modal */
+  #breed-modal { transition: opacity 0.3s ease; }
+  #breed-modal.hidden { pointer-events: none; }
+  #modal-box { transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease; }
+  #breed-modal.hidden #modal-box { transform: scale(0.95) translateY(10px); opacity: 0; }
+  #breed-modal:not(.hidden) #modal-box { transform: scale(1) translateY(0); opacity: 1; }
+
+  /* Modal detail cards */
+  .modal-detail { transition: all 0.2s ease; animation: fadeCard 0.35s ease forwards; opacity: 0; transform: translateY(8px); }
+  .modal-detail:hover { border-color: rgba(193,122,58,0.3) !important; transform: translateY(-2px); }
+  .modal-detail:nth-child(1){animation-delay:0.05s} .modal-detail:nth-child(2){animation-delay:0.1s} .modal-detail:nth-child(3){animation-delay:0.15s} .modal-detail:nth-child(4){animation-delay:0.2s} .modal-detail:nth-child(5){animation-delay:0.25s} .modal-detail:nth-child(6){animation-delay:0.3s}
+  @keyframes fadeCard { to { opacity: 1; transform: translateY(0); } }
+
+  /* Spinner */
+  .spinner { width: 22px; height: 22px; border: 2px solid rgba(193,122,58,0.2); border-top-color: #C17A3A; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Stagger cards on load */
+  .breed-card { opacity: 0; animation: cardIn 0.5s ease forwards; }
+  @keyframes cardIn { to { opacity: 1; } }
+
+  .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* Search focus */
+  #search-input:focus { box-shadow: 0 0 0 3px rgba(193,122,58,0.2); }
+</style>
+</head>
+<body class="bg-bg-dark font-sans text-cream selection:bg-primary/30 overflow-x-hidden">
+
+<div class="top-accent fixed top-0 left-0 right-0 z-[100]"></div>
+
+<!-- Header -->
+<header class="sticky top-[3px] z-50 border-b border-card-border bg-bg-dark/85 backdrop-blur-md px-6 lg:px-20 py-4">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <a href="/" class="flex items-center gap-3 group">
+      <div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+        <span class="material-symbols-outlined text-bg-dark text-xl">agriculture</span>
+      </div>
+      <div>
+        <h2 class="font-display text-lg font-bold tracking-tight text-cream leading-none">Bovine Breed AI</h2>
+        <p class="text-cream-muted text-[10px] tracking-widest uppercase">Indian Cattle Recognition</p>
+      </div>
+    </a>
+    <nav class="hidden md:flex items-center gap-8">
+      <a href="/" class="text-cream/70 hover:text-cream text-sm font-medium transition-colors">Home</a>
+      <a href="/identify" class="text-cream/70 hover:text-cream text-sm font-medium transition-colors">Identify</a>
+      <a href="/breeds" class="text-primary text-sm font-semibold border-b-2 border-primary pb-0.5">Browse Breeds</a>
+      <a href="/about" class="text-cream/70 hover:text-cream text-sm font-medium transition-colors">About</a>
+    </nav>
+    <a href="/identify" class="bg-primary text-white font-bold text-sm px-5 py-2.5 rounded-lg flex items-center gap-2 hover:brightness-110 transition-all">
+      <span class="material-symbols-outlined text-base">image_search</span>
+      Identify Breed
+    </a>
+  </div>
+</header>
+
+<!-- Page Header -->
+<main class="max-w-7xl mx-auto px-6 lg:px-20 py-12 space-y-10">
+  <div class="reveal">
+    <h1 class="font-serif text-5xl md:text-6xl text-cream font-black mb-3">Browse <span class="italic text-primary">41 Breeds</span></h1>
+    <p class="text-cream-muted text-lg max-w-2xl">Explore our comprehensive database of Indian cattle and buffalo breeds, powered by AI intelligence.</p>
+  </div>
+
+  <!-- Search + Count -->
+  <div class="flex flex-col gap-5 md:flex-row md:items-center md:justify-between reveal">
+    <div class="relative w-full max-w-md">
+      <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary text-xl">search</span>
+      <input id="search-input" class="w-full rounded-xl border border-card-border bg-card-dark py-3 pl-12 pr-4 text-cream placeholder-cream-muted/50 focus:border-primary outline-none transition-all text-sm" placeholder="Search breeds by name..." type="text"/>
+    </div>
+    <div class="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/30 px-4 py-2">
+      <span class="h-2 w-2 rounded-full bg-primary animate-pulse"></span>
+      <span id="breed-count" class="text-sm font-medium text-primary uppercase tracking-wider">Showing 41 of 41 breeds</span>
+    </div>
+  </div>
+
+  <!-- Breed Grid -->
+  <div id="breed-grid" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    {% for breed in breeds %}
+    <div class="breed-card overflow-hidden rounded-xl border border-card-border bg-card-dark cursor-pointer" style="animation-delay: {{ loop.index0 * 30 }}ms" data-breed="{{ breed }}" onclick="openModal('{{ breed }}')">
+      <div class="relative h-[220px] w-full overflow-hidden bg-card-dark">
+        <img
+          alt="{{ breed.replace('_', ' ') }}"
+          class="h-full w-full object-cover"
+          src="/static/breed_images/{{ breed }}.jpg"
+          onerror="this.onerror=null; this.src='/static/breed_images/{{ breed }}.png'; this.onerror=function(){this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center text-5xl bg-card-dark\'>🐄</div>'}"
+        />
+        <div class="absolute inset-0 bg-gradient-to-t from-card-dark/90 via-transparent to-transparent"></div>
+      </div>
+      <div class="p-5">
+        <h3 class="mb-4 text-lg font-bold text-cream font-display">{{ breed.replace('_', ' ') }}</h3>
+        <button class="w-full rounded-lg border border-primary/40 py-2.5 text-sm font-bold text-primary hover:bg-primary hover:text-bg-dark transition-all">
+          View Details
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- No results -->
+  <div id="no-results" style="display:none;" class="text-center py-20 text-cream-muted">
+    <span class="material-symbols-outlined text-5xl block mb-4 text-primary/30">search_off</span>
+    <p class="text-lg">No breeds found matching your search.</p>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="border-t border-card-border bg-card-dark px-6 lg:px-20 py-10 mt-10">
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+        <span class="material-symbols-outlined text-bg-dark text-base">agriculture</span>
+      </div>
+      <div>
+        <p class="font-display font-bold text-cream text-sm">Bovine Breed AI</p>
+        <p class="text-cream-muted text-xs">Indian Cattle & Buffalo Recognition</p>
+      </div>
+    </div>
+    <nav class="flex gap-8 text-cream-muted text-sm">
+      <a href="/" class="hover:text-primary transition-colors">Home</a>
+      <a href="/identify" class="hover:text-primary transition-colors">Identify</a>
+      <a href="/breeds" class="hover:text-primary transition-colors">Browse Breeds</a>
+      <a href="/about" class="hover:text-primary transition-colors">About</a>
+    </nav>
+    <p class="text-cream-muted text-xs flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary text-sm">auto_awesome</span>
+      Built with ResNet-50 · 41 Indian Breeds · Capstone 2026
+    </p>
+  </div>
+</footer>
+
+<!-- Modal -->
+<div id="breed-modal" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-bg-dark/85 backdrop-blur-sm hidden" onclick="handleOverlayClick(event)">
+  <div id="modal-box" class="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-card-border bg-card-dark shadow-2xl max-h-[90vh] overflow-y-auto">
+    <button onclick="closeModal()" class="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-bg-dark/70 text-cream hover:bg-primary/30 hover:text-primary transition-all">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+    <div id="modal-image-wrap" class="h-[280px] w-full overflow-hidden relative">
+      <img id="modal-image" alt="" class="h-full w-full object-cover"/>
+      <div class="absolute inset-0 bg-gradient-to-t from-card-dark via-transparent to-transparent"></div>
+    </div>
+    <div class="p-8 -mt-8 relative">
+      <h2 id="modal-breed-name" class="font-serif text-4xl text-cream mb-6 font-bold"></h2>
+      <div id="modal-details-container">
+        <div class="flex items-center gap-3 text-cream-muted py-4">
+          <div class="spinner"></div>
+          Loading breed details...
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const allBreeds = {{ breeds | tojson }};
+let visibleCount = allBreeds.length;
+
+// Search
+document.getElementById('search-input').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  const cards = document.querySelectorAll('.breed-card');
+  let count = 0;
+  cards.forEach(card => {
+    const name = card.dataset.breed.replace(/_/g, ' ').toLowerCase();
+    const show = name.includes(q);
+    card.style.display = show ? 'block' : 'none';
+    if (show) count++;
+  });
+  visibleCount = count;
+  document.getElementById('breed-count').textContent = `Showing ${count} of ${allBreeds.length} breeds`;
+  document.getElementById('no-results').style.display = count === 0 ? 'block' : 'none';
+});
+
+// Modal
+function openModal(breed) {
+  const modal = document.getElementById('breed-modal');
+  const img = document.getElementById('modal-image');
+  const name = document.getElementById('modal-breed-name');
+  const container = document.getElementById('modal-details-container');
+
+  name.textContent = breed.replace(/_/g, ' ');
+  img.src = `/static/breed_images/${breed}.jpg`;
+  img.onerror = function() {
+    this.onerror = null;
+    this.src = `/static/breed_images/${breed}.png`;
+    this.onerror = function() {
+      document.getElementById('modal-image-wrap').innerHTML = '<div class="w-full h-full flex items-center justify-center text-7xl bg-card-dark">🐄</div>';
+    };
+  };
+
+  container.innerHTML = `<div class="flex items-center gap-3 text-cream-muted py-4"><div class="spinner"></div>Loading breed details...</div>`;
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+
+  // Fetch details
+  fetch('/get_details', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ breed })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.details) {
+      container.innerHTML = formatModalDetails(data.details);
+    }
+  })
+  .catch(() => {
+    container.innerHTML = '<p class="text-red-400">Failed to load details.</p>';
+  });
+}
+
+function closeModal() {
+  document.getElementById('breed-modal').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('breed-modal')) closeModal();
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+function formatModalDetails(text) {
+  const iconMap = {
+    'origin': '🌍', 'region': '🌍',
+    'primary use': '🎯', 'use': '🎯', 'purpose': '🎯',
+    'milk': '🥛', 'dairy': '🥛',
+    'physical': '📐', 'characteristic': '📐',
+    'temperament': '🧠', 'behavior': '🧠',
+    'weight': '⚖️', 'size': '⚖️',
+    'color': '🎨', 'colour': '🎨',
+    'breed': '🐄', 'history': '📜'
+  };
+  function getIcon(label) {
+    const lower = label.toLowerCase();
+    for (const [key, icon] of Object.entries(iconMap)) {
+      if (lower.includes(key)) return icon;
+    }
+    return '•';
+  }
+
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const items = [];
+  for (const line of lines) {
+    const clean = line.replace(/^[\*\-•\d\.]+\s*/, '').trim();
+    if (!clean) continue;
+    const colonIdx = clean.indexOf(':');
+    if (colonIdx > 0 && colonIdx < 40) {
+      const rawLabel = clean.substring(0, colonIdx).replace(/\*\*/g, '').trim();
+      const value = clean.substring(colonIdx + 1).replace(/\*\*/g, '').trim();
+      if (value) items.push({ label: rawLabel, value, icon: getIcon(rawLabel) });
+    }
+  }
+
+  if (items.length === 0) {
+    return `<p class="text-cream/70 text-sm leading-relaxed">${text.replace(/\n/g, '<br>')}</p>`;
+  }
+
+  let html = '<div class="grid grid-cols-2 gap-4">';
+  for (const item of items) {
+    html += `
+      <div class="modal-detail rounded-xl border border-card-border bg-bg-dark/40 p-4">
+        <p class="text-xs font-bold uppercase tracking-widest text-primary mb-1">${item.label}</p>
+        <p class="text-cream text-sm font-medium leading-relaxed">${item.value}</p>
+      </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

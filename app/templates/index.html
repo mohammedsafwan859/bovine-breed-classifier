@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Identify Breed - Bovine Breed AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "primary": "#C17A3A",
+        "primary-light": "#E8A55A",
+        "bg-dark": "#0F0A06",
+        "card-dark": "#1A1108",
+        "card-border": "#2D1F0E",
+        "cream": "#F0E8D8",
+        "cream-muted": "#9B8B78",
+        "green-dark": "#2D5A3D",
+      },
+      fontFamily: {
+        "display": ["Space Grotesk", "sans-serif"],
+        "serif": ["Playfair Display", "serif"],
+        "sans": ["DM Sans", "sans-serif"],
+      },
+    },
+  },
+}
+</script>
+<style>
+  .top-accent { height: 3px; background: linear-gradient(90deg, #C17A3A, #E8A55A, #C17A3A); background-size: 200% 100%; animation: shimmer 3s linear infinite; }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  .hero-bg {
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuCl9y83hI4uCQI51RYUUnPR2l9qwtvLBePvQ5u-8x4SaOPAkKhgtWQifQI4GrvltZsVbCfcdaOvWU8wHPEAogSNCww6g9gJuENT1IhcSwqXpLhbLT3Dn2OpXrzXsvV6yMEwLll_v8wYT-Ey5QcRN1lubP6twLnGeBTFX1JfkztTpfoMq_-H_sO9fqmx2kKeoaHdhmFxXVZIzPmFBKTs-q8bKgBwP97MZcA25JkWZWBJDn5qOw8GGZRCf-4FtIiIH2VDwJqlgXKpcyE);
+    background-color: #1f1913;
+    background-size: 10%;
+    background-position: center;
+    animation: hero-drift 12s ease-in-out infinite alternate;
+  }
+
+  @keyframes hero-drift {
+    0%   { background-position: 0% 0%; background-size: 100%; }
+    25%  { background-position: 100% 0%; background-size: 100%; }
+    50%  { background-position: 100% 100%; background-size: 100%; }
+    75%  { background-position: 0% 100%; background-size: 100%; }
+    100% { background-position: 0% 0%; background-size: 100%; }
+  }
+
+  .amber-border-glow {
+    box-shadow: 0 0 15px rgba(192, 120, 57, 0.15);
+    border: 1px solid rgba(192, 120, 57, 0.3);
+  }
+
+  .grain-overlay::after {
+    content: ''; position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.35; pointer-events: none; border-radius: inherit;
+  }
+
+  nav a { position: relative; }
+  nav a::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #C17A3A; transition: width 0.3s ease; }
+  nav a:hover::after { width: 100%; }
+
+  .upload-zone-inner { transition: all 0.3s ease; }
+  .upload-zone-inner:hover { border-color: rgba(193,122,58,0.7) !important; background: rgba(193,122,58,0.05); box-shadow: 0 0 30px rgba(193,122,58,0.1); }
+  .upload-icon-wrap { transition: transform 0.3s ease; }
+  .upload-zone-inner:hover .upload-icon-wrap { transform: scale(1.1) translateY(-4px); }
+
+  #confidence-fill { transition: width 1s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 12px rgba(193,122,58,0.5); }
+
+  .btn-action { transition: all 0.2s ease; }
+  .btn-action:hover { transform: translateY(-2px); }
+  .btn-action:active { transform: scale(0.97); }
+
+  .result-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 0.78em; font-weight: 600; margin-bottom: 16px; border: 1px solid; }
+  .result-badge { background: rgba(45,90,61,0.1); border-color: rgba(45,90,61,0.25); color: #4ade80; }
+  .result-badge.warning { background: rgba(193,122,58,0.1); border-color: rgba(193,122,58,0.3); color: #C17A3A; }
+  .result-badge.error { background: rgba(180,50,50,0.1); border-color: rgba(180,50,50,0.25); color: #f87171; }
+
+  .loading-dots span { display: inline-block; width: 6px; height: 6px; background: #F0E8D8; border-radius: 50%; margin: 0 2px; animation: bounce 1.2s infinite; }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+  .spinner { width: 22px; height: 22px; border: 2px solid rgba(45,90,61,0.2); border-top-color: #4ade80; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .details-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 768px) { .details-grid { grid-template-columns: repeat(2,1fr); } }
+  @media (max-width: 480px) { .details-grid { grid-template-columns: 1fr; } }
+
+  .detail-item { background: rgba(45,31,14,0.4); border: 1px solid rgba(61,43,31,0.5); border-radius: 12px; padding: 16px; transition: all 0.2s ease; animation: fadeCard 0.4s ease forwards; opacity: 0; transform: translateY(10px); }
+  .detail-item:hover { border-color: rgba(193,122,58,0.3); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(193,122,58,0.1); }
+  .detail-item:nth-child(1){animation-delay:0.05s} .detail-item:nth-child(2){animation-delay:0.1s} .detail-item:nth-child(3){animation-delay:0.15s} .detail-item:nth-child(4){animation-delay:0.2s} .detail-item:nth-child(5){animation-delay:0.25s} .detail-item:nth-child(6){animation-delay:0.3s}
+  @keyframes fadeCard { to { opacity: 1; transform: translateY(0); } }
+  .detail-icon { font-size: 20px; margin-bottom: 8px; display: block; }
+  .detail-label { font-size: 0.65em; text-transform: uppercase; letter-spacing: 1px; color: #C17A3A; font-weight: 700; margin-bottom: 6px; }
+  .detail-value { font-size: 0.88em; color: #F0E8D8; line-height: 1.5; }
+  .details-loading { display: flex; align-items: center; gap: 12px; padding: 24px 0; color: #9B8B78; }
+  .details-raw { color: #F0E8D8; line-height: 1.7; }
+
+  #history-tbody tr { transition: background 0.15s ease; }
+  #history-tbody tr:hover { background: rgba(193,122,58,0.04); }
+  #history-tbody td { padding: 14px 24px; }
+  #history-tbody td:first-child { font-weight: 600; color: #F0E8D8; }
+  #history-tbody td:nth-child(2) { color: #C17A3A; font-weight: 600; }
+  #history-tbody td:nth-child(3) { color: #9B8B78; font-size: 0.88em; }
+
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body class="bg-bg-dark font-sans text-cream selection:bg-primary/30 overflow-x-hidden">
+
+<div class="top-accent fixed top-0 left-0 right-0 z-[100]"></div>
+
+<!-- Header -->
+<header class="sticky top-[3px] z-50 border-b border-card-border bg-bg-dark/85 backdrop-blur-md px-6 lg:px-20 py-4">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <a href="/" class="flex items-center gap-3 group">
+      <div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+        <span class="material-symbols-outlined text-bg-dark text-xl">agriculture</span>
+      </div>
+      <div>
+        <h2 class="font-display text-lg font-bold tracking-tight text-cream leading-none">Bovine Breed AI</h2>
+        <p class="text-cream-muted text-[10px] tracking-widest uppercase">Indian Cattle Recognition</p>
+      </div>
+    </a>
+    <nav class="hidden md:flex items-center gap-8">
+      <a href="/" class="text-cream/70 hover:text-cream text-sm font-medium transition-colors">Home</a>
+      <a href="/identify" class="text-primary text-sm font-semibold border-b-2 border-primary pb-0.5">Identify</a>
+      <a href="/breeds" class="text-cream/70 hover:text-cream text-sm font-medium transition-colors">Browse Breeds</a>
+      <a href="/about" class="text-cream/70 hover:text-cream text-sm font-medium transition-colors">About</a>
+    </nav>
+    <a href="/breeds" class="bg-primary text-white font-bold text-sm px-5 py-2.5 rounded-lg flex items-center gap-2 hover:brightness-110 transition-all">
+      <span class="material-symbols-outlined text-base">menu_book</span>
+      Browse Breeds
+    </a>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="hero-bg relative px-6 lg:px-20 py-8 lg:py-10 overflow-hidden rounded-3xl amber-border-glow">
+  <div class="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
+    <div class="max-w-2xl space-y-4">
+      <p class="text-primary font-display font-semibold tracking-widest uppercase text-xs">AI-Powered Recognition System</p>
+      <h2 class="font-serif text-3xl md:text-5xl text-cream leading-tight font-black">
+        Identify Any <span class="italic text-primary">Indian Cattle</span> Breed
+      </h2>
+      <p class="text-cream text-base max-w-lg">Upload a photo and our ResNet-50 model identifies heritage bovine breeds with high precision.</p>
+    </div>
+    <div class="flex flex-wrap gap-4 shrink-0">
+      <div class="bg-card-dark/80 backdrop-blur border border-primary/30 px-6 py-3 rounded-xl flex items-center gap-3">
+        <span class="material-symbols-outlined text-primary">verified</span>
+        <div>
+          <p class="text-[10px] text-cream-muted uppercase font-bold tracking-widest">Breeds Supported</p>
+          <p class="text-xl font-bold text-cream font-display">41</p>
+        </div>
+      </div>
+      <div class="bg-card-dark/80 backdrop-blur border border-primary/30 px-6 py-3 rounded-xl flex items-center gap-3">
+        <span class="material-symbols-outlined text-primary">memory</span>
+        <div>
+          <p class="text-[10px] text-cream-muted uppercase font-bold tracking-widest">Model</p>
+          <p class="text-xl font-bold text-cream font-display">ResNet-50</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Main -->
+<main class="max-w-7xl mx-auto px-6 lg:px-20 py-10 space-y-10">
+
+  <div class="grid lg:grid-cols-2 gap-8 items-start">
+    <!-- Upload Card -->
+    <div class="bg-card-dark rounded-2xl border border-card-border overflow-hidden">
+      <div class="px-8 pt-7 pb-4 border-b border-card-border flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
+          <span class="material-symbols-outlined text-bg-dark text-lg">photo_camera</span>
+        </div>
+        <h3 class="font-display text-lg font-bold text-cream">Upload Image</h3>
+      </div>
+      <div class="p-8">
+        <div id="upload-zone" class="upload-zone-inner border-2 border-dashed border-primary/30 rounded-xl flex flex-col items-center justify-center p-10 cursor-pointer bg-primary/5 ">
+          <input type="file" id="image-input" accept="image/jpeg,image/png,image/jpg,image/webp" class="hidden"/>
+          <div class="upload-icon-wrap w-16 h-16 bg-primary/15 rounded-full flex items-center justify-center mb-4">
+            <span class="material-symbols-outlined text-primary text-3xl">cloud_upload</span>
+          </div>
+          <p class="text-cream font-display font-semibold text-lg">Drop your image here</p>
+          <p class="text-cream-muted text-sm mt-1">or click to browse files</p>
+          <p class="text-cream/30 text-xs mt-4 uppercase tracking-widest">JPG, PNG, WEBP supported</p>
+        </div>
+        <div id="preview-container" style="display:none;" class="mt-4">
+          <div class="rounded-xl overflow-hidden relative bg-card-dark border border-card-border">
+            <img id="image-preview" src="#" alt="Preview" class="w-full max-h-[260px] object-cover block"/>
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-4 py-3 flex items-center justify-between">
+              <span id="file-name" class="text-cream/80 text-xs font-medium truncate max-w-[200px]">image.jpg</span>
+              <button type="button" id="change-image-btn" class="text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg transition-all">Change</button>
+            </div>
+          </div>
+          <button type="button" id="predict-button" style="display:none;" class="btn-action mt-4 w-full bg-primary text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 text-base hover:brightness-110">
+            <span class="material-symbols-outlined">image_search</span>
+            Identify Breed →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result Card -->
+    <div id="result-card" style="display:none;" class="bg-card-dark rounded-2xl border border-card-border overflow-hidden">
+      <div id="result-breed-image-wrap" style="display:none;" class="w-full h-44 overflow-hidden relative bg-card-dark">
+        <img id="result-breed-image" src="" alt="" class="w-full h-full object-cover"/>
+        <div class="absolute inset-0 bg-gradient-to-t from-card-dark to-transparent"></div>
+      </div>
+      <div class="px-8 pt-7 pb-4 border-b border-card-border flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-green-dark flex items-center justify-center">
+          <span class="material-symbols-outlined text-green-400 text-lg">auto_awesome</span>
+        </div>
+        <h3 class="font-display text-lg font-bold text-cream">Identification Result</h3>
+      </div>
+      <div class="p-8 space-y-5">
+        <div id="result-badge" class="result-badge">✓ Identified with high confidence</div>
+        <div id="breed-name" class="font-serif text-5xl font-black text-cream leading-tight">---</div>
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-cream-muted text-sm font-medium">Confidence Score</span>
+            <strong id="confidence-text" class="text-primary font-bold">---</strong>
+          </div>
+          <div class="h-2.5 bg-white/10 rounded-full overflow-hidden">
+            <div id="confidence-fill" class="h-full rounded-full bg-gradient-to-r from-primary to-primary-light" style="width:0%"></div>
+          </div>
+          <p class="text-cream/30 text-xs mt-2">Prediction generated using ResNet-50 CNN model</p>
+        </div>
+        <div id="top3-panel" style="display:none;" class="border-t border-card-border pt-4">
+          <p class="text-xs text-cream-muted uppercase tracking-wider font-bold mb-3">Other Possible Matches</p>
+          <div id="top3-container" class="space-y-2"></div>
+        </div>
+        <div class="flex flex-col gap-3 pt-2">
+          <button type="button" id="details-button" style="display:none;" class="btn-action w-full border-2 border-green-dark text-green-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-green-dark/20 transition-all">
+            <span class="material-symbols-outlined text-lg">description</span>
+            Get Details
+          </button>
+          <button type="button" id="download-card-button" style="display:none;" class="btn-action w-full border-2 border-primary/50 text-primary font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-primary/10 transition-all">
+            <span class="material-symbols-outlined text-lg">download</span>
+            Download Report
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Breed Profile -->
+  <div id="details-panel" style="display:none;" class="bg-card-dark rounded-2xl border border-card-border overflow-hidden reveal">
+    <div class="px-8 py-5 border-b border-card-border flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-green-dark flex items-center justify-center">
+        <span class="material-symbols-outlined text-green-400 text-lg">menu_book</span>
+      </div>
+      <h3 id="details-title" class="font-display text-lg font-bold text-cream">Breed Profile</h3>
+    </div>
+    <div id="details-container" class="p-8">
+      <div class="details-loading">
+        <div class="spinner"></div>
+        Generating breed information...
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="bg-card-dark rounded-2xl border border-card-border overflow-hidden reveal">
+    <div class="px-8 py-5 border-b border-card-border flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center">
+          <span class="material-symbols-outlined text-primary text-lg">history</span>
+        </div>
+        <h3 class="font-display text-lg font-bold text-cream">Prediction History</h3>
+      </div>
+      <button type="button" id="clear-history-btn" class="bg-card-border hover:bg-primary text-cream-muted hover:text-white font-bold text-xs px-4 py-2 rounded-lg transition-all">Clear History</button>
+    </div>
+    <div class="p-8">
+      <div id="history-empty" class="text-center text-cream-muted py-8">No predictions yet this session.</div>
+      <div id="history-table-wrap" style="display:none;" class="overflow-x-auto rounded-xl border border-card-border">
+        <table class="w-full text-left">
+          <thead class="bg-card-border/50">
+            <tr>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-cream-muted">Breed Name</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-cream-muted">Confidence</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-cream-muted">Time</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody" class="divide-y divide-card-border"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Footer -->
+<footer class="border-t border-card-border bg-card-dark px-6 lg:px-20 py-10 mt-10">
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+        <span class="material-symbols-outlined text-bg-dark text-base">agriculture</span>
+      </div>
+      <div>
+        <p class="font-display font-bold text-cream text-sm">Bovine Breed AI</p>
+        <p class="text-cream-muted text-xs">Indian Cattle & Buffalo Recognition</p>
+      </div>
+    </div>
+    <nav class="flex gap-8 text-cream-muted text-sm">
+      <a href="/" class="hover:text-primary transition-colors">Home</a>
+      <a href="/identify" class="hover:text-primary transition-colors">Identify</a>
+      <a href="/breeds" class="hover:text-primary transition-colors">Browse Breeds</a>
+      <a href="/about" class="hover:text-primary transition-colors">About</a>
+    </nav>
+    <p class="text-cream-muted text-xs flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary text-sm">auto_awesome</span>
+      Built with ResNet-50 · 41 Indian Breeds · Capstone 2026
+    </p>
+  </div>
+</footer>
+
+<script src="/static/script.js"></script>
+<script>
+// Show breed reference image
+function showBreedImage(breed) {
+  const wrap = document.getElementById('result-breed-image-wrap');
+  const img = document.getElementById('result-breed-image');
+  const breedName = breed.replace(/ /g, '_');
+  img.src = `/static/breed_images/${breedName}.jpg`;
+  img.onerror = function() {
+    this.onerror = null;
+    this.src = `/static/breed_images/${breedName}.png`;
+    this.onerror = function() { wrap.style.display = 'none'; };
+  };
+  wrap.style.display = 'block';
+}
+
+// Top 3 display
+function showTop3(top3) {
+  if (!top3 || top3.length < 2) return;
+  const panel = document.getElementById('top3-panel');
+  const container = document.getElementById('top3-container');
+  panel.style.display = 'block';
+  container.innerHTML = '';
+  top3.slice(1).forEach(item => {
+    const conf = parseFloat(item.confidence);
+    container.innerHTML += `
+      <div class="flex items-center gap-3">
+        <span class="text-cream-muted text-sm w-36 truncate">${item.breed.replace(/_/g, ' ')}</span>
+        <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+          <div class="h-full rounded-full bg-primary/50" style="width:${conf}%"></div>
+        </div>
+        <span class="text-primary text-xs font-bold w-14 text-right">${item.confidence}</span>
+      </div>`;
+  });
+}
+
+// Intercept fetch to hook into predict response
+const _origFetch = window.fetch;
+window.fetch = async function(...args) {
+  const res = await _origFetch(...args);
+  if (typeof args[0] === 'string' && args[0] === '/predict') {
+    res.clone().json().then(data => {
+      if (data && data.breed) {
+        showBreedImage(data.breed);
+        if (data.top3) showTop3(data.top3);
+      }
+    }).catch(() => {});
+  }
+  return res;
+};
+
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
