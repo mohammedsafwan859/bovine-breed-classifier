@@ -21,8 +21,16 @@ An AI-powered web application that identifies cattle breeds from images using a 
 ## How It Works
 
 1. Upload a cattle image
+
+![Upload](docs/upload.png)
+
 2. ResNet-50 model classifies the breed with a confidence score
+
+![Identify](docs/Identify.png)
+
 3. Get detailed breed information via Groq AI
+
+![Details](docs/getDetails.png)
 
 ## Live Demo
 
